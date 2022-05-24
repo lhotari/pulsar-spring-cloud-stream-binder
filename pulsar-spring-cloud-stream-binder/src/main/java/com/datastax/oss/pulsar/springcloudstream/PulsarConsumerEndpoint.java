@@ -79,6 +79,12 @@ class PulsarConsumerEndpoint implements MessageProducer, Pausable {
 		GenericMessage<byte[]> msg = new GenericMessage<>(message.getValue(),
 				new HashMap<>(message.getProperties()));
 		outputChannel.send(msg);
+		try {
+			consumer.acknowledge(message);
+		}
+		catch (PulsarClientException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
