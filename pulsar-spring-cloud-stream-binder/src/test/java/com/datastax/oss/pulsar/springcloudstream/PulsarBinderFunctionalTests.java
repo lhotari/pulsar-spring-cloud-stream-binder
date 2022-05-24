@@ -51,6 +51,7 @@ import org.springframework.util.MimeType;
 		// example of setting Pulsar consumer settings for consumer
 		"pulsar.spring.cloud.stream.bindings.myEventConsumer-in-0.consumer.subscriptionType=Failover",
 		"pulsar.spring.cloud.stream.bindings.myEventConsumer-in-0.consumer.subscriptionName=MySubscription",
+		"pulsar.spring.cloud.stream.bindings.myEventConsumer-in-0.consumer.schema.type=BYTES",
 		"spring.cloud.stream.bindings.myEventProducer-out-0.destination="
 				+ PulsarBinderFunctionalTests.PULSAR_TOPIC,
 		// example of enabling error channel for a producer

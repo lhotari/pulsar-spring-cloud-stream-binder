@@ -17,12 +17,14 @@
 package com.datastax.oss.pulsar.springcloudstream;
 
 import com.datastax.oss.pulsar.springcloudstream.properties.PulsarConsumerProperties;
+import com.datastax.oss.pulsar.springcloudstream.properties.SchemaSpec;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.ConsumerBuilder;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
+import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionInitialPosition;
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.client.impl.ConsumerBuilderImpl;
@@ -36,7 +38,7 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.ReflectionUtils;
 
 class PulsarConsumerEndpoint implements MessageProducer, Pausable {
-	private final Consumer<byte[]> pulsarConsumer;
+	private final Consumer<Object> pulsarConsumer;
 	private MessageChannel outputChannel;
 
 	private static final Field CONF_FIELD = ReflectionUtils.findField(
@@ -47,11 +49,18 @@ class PulsarConsumerEndpoint implements MessageProducer, Pausable {
 
 	private volatile boolean running;
 
+	private final SchemaSpec schemaSpec;
+
+	private final String contentType;
+
 	PulsarConsumerEndpoint(PulsarClient pulsarClient, ConsumerDestination destination,
 			String group,
 			ExtendedConsumerProperties<PulsarConsumerProperties> properties) {
 		try {
-			ConsumerBuilder<byte[]> consumerBuilder = pulsarClient.newConsumer();
+			schemaSpec = properties.getExtension().getSchema();
+			contentType = properties.getExtension().getContentType();
+			ConsumerBuilder<Object> consumerBuilder = pulsarClient
+					.newConsumer((Schema<Object>) schemaSpec.asPulsarSchema());
 			ConsumerConfigurationData consumerProperties = properties.getExtension()
 				.clone();
 			// Use reflection since the Pulsar API doesn't have a public way to apply the
@@ -74,10 +83,13 @@ class PulsarConsumerEndpoint implements MessageProducer, Pausable {
 		}
 	}
 
-	private void consumeMessage(Consumer<byte[]> consumer,
-			org.apache.pulsar.client.api.Message<byte[]> message) {
-		GenericMessage<byte[]> msg = new GenericMessage<>(message.getValue(),
-				new HashMap<>(message.getProperties()));
+	private void consumeMessage(Consumer<Object> consumer,
+			org.apache.pulsar.client.api.Message<Object> message) {
+		HashMap<String, Object> headers = new HashMap<>(message.getProperties());
+		if (contentType != null) {
+			headers.put("contentType", contentType);
+		}
+		GenericMessage<Object> msg = new GenericMessage<>(message.getValue(), headers);
 		outputChannel.send(msg);
 		try {
 			consumer.acknowledge(message);

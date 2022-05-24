@@ -28,6 +28,7 @@ import org.apache.pulsar.client.impl.conf.ConsumerConfigurationData;
  */
 public class PulsarConsumerProperties extends ConsumerConfigurationData<Object> {
 	private SchemaSpec schema = new SchemaSpec();
+	private String contentType;
 
 	public PulsarConsumerProperties() {
 		setStartPaused(true);
@@ -41,5 +42,13 @@ public class PulsarConsumerProperties extends ConsumerConfigurationData<Object> 
 
 	public void setSchema(SchemaSpec schema) {
 		this.schema = schema;
+	}
+
+	public String getContentType() {
+		return contentType;
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
 	}
 }
