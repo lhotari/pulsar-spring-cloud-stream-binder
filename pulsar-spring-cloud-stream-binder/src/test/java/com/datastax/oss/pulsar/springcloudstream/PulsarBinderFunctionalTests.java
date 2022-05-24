@@ -50,6 +50,10 @@ import org.springframework.util.MimeType;
 				+ PulsarBinderFunctionalTests.PULSAR_TOPIC,
 		"spring.cloud.stream.bindings.myEventProducer-out-0.destination="
 				+ PulsarBinderFunctionalTests.PULSAR_TOPIC,
+		// example of enabling error channel for a producer
+		"spring.cloud.stream.bindings.myEventProducer-out-0.producer.errorChannelEnabled=true",
+		// example of enabling useSendAsync for a producer
+		"pulsar.spring.cloud.stream.bindings.myEventProducer-out-0.producer.useSendAsync=true",
 		"pulsar.spring.cloud.stream.binder.headers = event.eventType" })
 @DirtiesContext
 public class PulsarBinderFunctionalTests implements PulsarContainerTest {

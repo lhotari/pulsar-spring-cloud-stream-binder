@@ -53,20 +53,16 @@ public class PulsarMessageChannelBinder extends
 
 	private final PulsarBinderConfigurationProperties configurationProperties;
 	private final PulsarClient pulsarClient;
-
-	private PulsarExtendedBindingProperties extendedBindingProperties = new PulsarExtendedBindingProperties();
+	private final PulsarExtendedBindingProperties extendedBindingProperties;
 
 	public PulsarMessageChannelBinder(
 			PulsarBinderConfigurationProperties configurationProperties,
-			PulsarTopicProvisioner provisioningProvider, PulsarClient pulsarClient) {
+			PulsarTopicProvisioner provisioningProvider, PulsarClient pulsarClient,
+			PulsarExtendedBindingProperties extendedBindingProperties) {
 
 		super(headersToMap(configurationProperties), provisioningProvider);
 		this.configurationProperties = configurationProperties;
 		this.pulsarClient = pulsarClient;
-	}
-
-	public void setExtendedBindingProperties(
-			PulsarExtendedBindingProperties extendedBindingProperties) {
 		this.extendedBindingProperties = extendedBindingProperties;
 	}
 

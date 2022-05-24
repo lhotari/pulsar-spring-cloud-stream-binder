@@ -24,8 +24,11 @@ import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.ProducerBuilder;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
+import org.apache.pulsar.client.api.TypedMessageBuilder;
 import org.apache.pulsar.client.impl.ProducerBuilderImpl;
 import org.apache.pulsar.client.impl.conf.ProducerConfigurationData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.Lifecycle;
@@ -34,11 +37,12 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.ReflectionUtils;
 
 import com.datastax.oss.pulsar.springcloudstream.properties.PulsarProducerProperties;
-
 class PulsarProducerMessageHandler implements MessageHandler, Lifecycle {
+	private static final Logger LOG = LoggerFactory.getLogger(PulsarProducerMessageHandler.class.getName());
 	private static final Field CONF_FIELD = ReflectionUtils.findField(
 			ProducerBuilderImpl.class, "conf", ProducerConfigurationData.class);
 	static {
@@ -46,12 +50,16 @@ class PulsarProducerMessageHandler implements MessageHandler, Lifecycle {
 	}
 
 	private final Producer<byte[]> pulsarProducer;
+	private final MessageChannel errorChannel;
 	private volatile boolean running;
+
+	private final boolean useAsyncSend;
 
 	public PulsarProducerMessageHandler(PulsarClient pulsarClient,
 			ProducerDestination destination,
 			ExtendedProducerProperties<PulsarProducerProperties> producerProperties,
 			MessageChannel errorChannel) {
+		this.errorChannel = errorChannel;
 		try {
 			ProducerBuilder<byte[]> producerBuilder = pulsarClient.newProducer();
 			// Use reflection since the Pulsar API doesn't have a public way to apply the
@@ -63,27 +71,37 @@ class PulsarProducerMessageHandler implements MessageHandler, Lifecycle {
 		catch (PulsarClientException e) {
 			throw new RuntimeException(e);
 		}
+		this.useAsyncSend = producerProperties.getExtension().isUseSendAsync();
 	}
 
 	@Override
 	public void handleMessage(Message<?> message) throws MessagingException {
-		try {
-			pulsarProducer.newMessage()
-					// support just byte[] for now
-					.value((byte[]) message.getPayload())
-					// map headers to Map<String, String>
-					.properties(message.getHeaders().entrySet().stream()
-							.map(entry -> Map.entry(entry.getKey(),
-									entry.getValue() != null
-											? String.valueOf(entry.getValue())
-											: null))
-							.collect(Collectors.toUnmodifiableMap(Map.Entry::getKey,
-									Map.Entry::getValue)))
-					// TODO - sending will be slow if it's always synchronous. Is there a way to enable pipelining?
-					.send();
-		}
-		catch (PulsarClientException e) {
-			throw new MessageDeliveryException(message, e);
+		TypedMessageBuilder<byte[]> messageBuilder = pulsarProducer.newMessage()
+			// support just byte[] for now
+			.value((byte[]) message.getPayload())
+			// map headers to Map<String, String>
+			.properties(message.getHeaders().entrySet().stream().map(entry -> Map.entry(entry.getKey(),
+					entry.getValue() != null ? String.valueOf(entry.getValue()) : null))
+				.collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)));
+		if (useAsyncSend) {
+			messageBuilder.sendAsync()
+				.exceptionally(throwable -> {
+					if (errorChannel != null) {
+						errorChannel.send(new ErrorMessage(throwable, message));
+					} else {
+						// Log send failure if there's no errorChannel
+						// Producer properties should contain errorChannelEnabled
+						LOG.warn("Sending message {} failed", message, throwable);
+					}
+					return null;
+				});
+		} else {
+			try {
+				messageBuilder.send();
+			}
+			catch (PulsarClientException e) {
+				throw new MessageDeliveryException(message, e);
+			}
 		}
 	}
 

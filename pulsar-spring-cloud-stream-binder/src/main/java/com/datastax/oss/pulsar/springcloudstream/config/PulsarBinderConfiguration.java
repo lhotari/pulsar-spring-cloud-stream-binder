@@ -16,32 +16,36 @@
 
 package com.datastax.oss.pulsar.springcloudstream.config;
 
-import com.datastax.oss.pulsar.springcloudstream.properties.PulsarBinderConfigurationProperties;
-import com.datastax.oss.pulsar.springcloudstream.properties.PulsarExtendedBindingProperties;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
-import com.datastax.oss.pulsar.springcloudstream.PulsarMessageChannelBinder;
-import com.datastax.oss.pulsar.springcloudstream.provisioning.PulsarTopicProvisioner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+import com.datastax.oss.pulsar.springcloudstream.PulsarMessageChannelBinder;
+import com.datastax.oss.pulsar.springcloudstream.properties.PulsarBinderConfigurationProperties;
+import com.datastax.oss.pulsar.springcloudstream.properties.PulsarExtendedBindingProperties;
+import com.datastax.oss.pulsar.springcloudstream.provisioning.PulsarTopicProvisioner;
+
 /**
- * The auto-configuration for Apache Pulsar components and Spring Cloud Stream Pulsar Binder.
+ * The auto-configuration for Apache Pulsar components and Spring Cloud Stream Pulsar
+ * Binder.
  *
  * @author Lari Hotari
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(Binder.class)
-@EnableConfigurationProperties({ PulsarBinderConfigurationProperties.class, PulsarExtendedBindingProperties.class})
+@EnableConfigurationProperties({ PulsarBinderConfigurationProperties.class,
+		PulsarExtendedBindingProperties.class })
 @Import(PulsarClientAutoConfiguration.class)
 public class PulsarBinderConfiguration {
 
 	private final PulsarBinderConfigurationProperties configurationProperties;
 
-	public PulsarBinderConfiguration(PulsarBinderConfigurationProperties configurationProperties) {
+	public PulsarBinderConfiguration(
+			PulsarBinderConfigurationProperties configurationProperties) {
 
 		this.configurationProperties = configurationProperties;
 	}
@@ -53,12 +57,12 @@ public class PulsarBinderConfiguration {
 
 	@Bean
 	public PulsarMessageChannelBinder pulsarMessageChannelBinder(
-			PulsarClient pulsarClient,
-			PulsarTopicProvisioner provisioningProvider,
+			PulsarClient pulsarClient, PulsarTopicProvisioner provisioningProvider,
 			PulsarExtendedBindingProperties pulsarExtendedBindingProperties) {
 
-		PulsarMessageChannelBinder pulsarMessageChannelBinder =
-				new PulsarMessageChannelBinder(this.configurationProperties, provisioningProvider, pulsarClient);
+		PulsarMessageChannelBinder pulsarMessageChannelBinder = new PulsarMessageChannelBinder(
+				this.configurationProperties, provisioningProvider, pulsarClient,
+				pulsarExtendedBindingProperties);
 		return pulsarMessageChannelBinder;
 	}
 }

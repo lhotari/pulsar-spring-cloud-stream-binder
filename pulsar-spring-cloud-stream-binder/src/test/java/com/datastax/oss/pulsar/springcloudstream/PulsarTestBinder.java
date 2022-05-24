@@ -18,6 +18,7 @@ package com.datastax.oss.pulsar.springcloudstream;
 
 import com.datastax.oss.pulsar.springcloudstream.properties.PulsarBinderConfigurationProperties;
 import com.datastax.oss.pulsar.springcloudstream.properties.PulsarConsumerProperties;
+import com.datastax.oss.pulsar.springcloudstream.properties.PulsarExtendedBindingProperties;
 import com.datastax.oss.pulsar.springcloudstream.properties.PulsarProducerProperties;
 import com.datastax.oss.pulsar.springcloudstream.provisioning.PulsarTopicProvisioner;
 import org.apache.pulsar.client.api.PulsarClient;
@@ -92,7 +93,7 @@ public class PulsarTestBinder extends
 				PulsarTopicProvisioner provisioningProvider) {
 
 			super(pulsarBinderConfigurationProperties, provisioningProvider,
-					pulsarClient);
+					pulsarClient, new PulsarExtendedBindingProperties());
 		}
 
 		/*

@@ -25,7 +25,16 @@ import org.apache.pulsar.client.impl.conf.ProducerConfigurationData;
  *
  */
 public class PulsarProducerProperties extends ProducerConfigurationData {
+	private boolean useSendAsync;
 	public PulsarProducerProperties() {
 		setBlockIfQueueFull(true);
+	}
+
+	public boolean isUseSendAsync() {
+		return useSendAsync;
+	}
+
+	public void setUseSendAsync(boolean useSendAsync) {
+		this.useSendAsync = useSendAsync;
 	}
 }
