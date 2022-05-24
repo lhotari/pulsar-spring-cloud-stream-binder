@@ -16,6 +16,7 @@
 
 package com.datastax.oss.pulsar.springcloudstream;
 
+import com.datastax.oss.pulsar.springcloudstream.properties.SchemaSpec;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.ProducerBuilder;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
+import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.TypedMessageBuilder;
 import org.apache.pulsar.client.impl.ProducerBuilderImpl;
 import org.apache.pulsar.client.impl.conf.ProducerConfigurationData;
@@ -37,6 +39,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.ReflectionUtils;
 
@@ -49,19 +52,26 @@ class PulsarProducerMessageHandler implements MessageHandler, Lifecycle {
 		ReflectionUtils.makeAccessible(CONF_FIELD);
 	}
 
-	private final Producer<byte[]> pulsarProducer;
+	private final Producer<Object> pulsarProducer;
 	private final MessageChannel errorChannel;
+	private final MessageConverter messageConverter;
 	private volatile boolean running;
 
 	private final boolean useAsyncSend;
 
+	private final SchemaSpec schemaSpec;
+
 	public PulsarProducerMessageHandler(PulsarClient pulsarClient,
 			ProducerDestination destination,
 			ExtendedProducerProperties<PulsarProducerProperties> producerProperties,
-			MessageChannel errorChannel) {
+			MessageChannel errorChannel,
+			MessageConverter messageConverter) {
 		this.errorChannel = errorChannel;
+		this.messageConverter = messageConverter;
 		try {
-			ProducerBuilder<byte[]> producerBuilder = pulsarClient.newProducer();
+			schemaSpec = producerProperties.getExtension().getSchema();
+			ProducerBuilder<Object> producerBuilder = pulsarClient.newProducer(
+				(Schema<Object>) schemaSpec.asPulsarSchema());
 			// Use reflection since the Pulsar API doesn't have a public way to apply the
 			// configuration object
 			ReflectionUtils.setField(CONF_FIELD, producerBuilder,
@@ -76,9 +86,11 @@ class PulsarProducerMessageHandler implements MessageHandler, Lifecycle {
 
 	@Override
 	public void handleMessage(Message<?> message) throws MessagingException {
-		TypedMessageBuilder<byte[]> messageBuilder = pulsarProducer.newMessage()
-			// support just byte[] for now
-			.value((byte[]) message.getPayload())
+		Object convertedPayload = messageConverter != null
+				? messageConverter.fromMessage(message, schemaSpec.getValueClass())
+				: message.getPayload();
+		TypedMessageBuilder<Object> messageBuilder = pulsarProducer.newMessage()
+			.value(convertedPayload)
 			// map headers to Map<String, String>
 			.properties(message.getHeaders().entrySet().stream().map(entry -> Map.entry(entry.getKey(),
 					entry.getValue() != null ? String.valueOf(entry.getValue()) : null))

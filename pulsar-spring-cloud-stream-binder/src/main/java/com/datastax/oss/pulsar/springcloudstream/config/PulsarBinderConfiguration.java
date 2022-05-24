@@ -17,6 +17,8 @@
 package com.datastax.oss.pulsar.springcloudstream.config;
 
 import org.apache.pulsar.client.api.PulsarClient;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
@@ -28,6 +30,8 @@ import com.datastax.oss.pulsar.springcloudstream.PulsarMessageChannelBinder;
 import com.datastax.oss.pulsar.springcloudstream.properties.PulsarBinderConfigurationProperties;
 import com.datastax.oss.pulsar.springcloudstream.properties.PulsarExtendedBindingProperties;
 import com.datastax.oss.pulsar.springcloudstream.provisioning.PulsarTopicProvisioner;
+import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.messaging.converter.MessageConverter;
 
 /**
  * The auto-configuration for Apache Pulsar components and Spring Cloud Stream Pulsar
@@ -43,11 +47,13 @@ import com.datastax.oss.pulsar.springcloudstream.provisioning.PulsarTopicProvisi
 public class PulsarBinderConfiguration {
 
 	private final PulsarBinderConfigurationProperties configurationProperties;
+	private final MessageConverter messageConverter;
 
 	public PulsarBinderConfiguration(
-			PulsarBinderConfigurationProperties configurationProperties) {
-
+			PulsarBinderConfigurationProperties configurationProperties,
+			@Autowired(required = false) @Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) MessageConverter messageConverter) {
 		this.configurationProperties = configurationProperties;
+		this.messageConverter = messageConverter;
 	}
 
 	@Bean
@@ -62,7 +68,7 @@ public class PulsarBinderConfiguration {
 
 		PulsarMessageChannelBinder pulsarMessageChannelBinder = new PulsarMessageChannelBinder(
 				this.configurationProperties, provisioningProvider, pulsarClient,
-				pulsarExtendedBindingProperties);
+				pulsarExtendedBindingProperties, messageConverter);
 		return pulsarMessageChannelBinder;
 	}
 }

@@ -27,9 +27,19 @@ import org.apache.pulsar.client.impl.conf.ConsumerConfigurationData;
  *
  */
 public class PulsarConsumerProperties extends ConsumerConfigurationData<Object> {
+	private SchemaSpec schema = new SchemaSpec();
+
 	public PulsarConsumerProperties() {
 		setStartPaused(true);
 		setSubscriptionInitialPosition(SubscriptionInitialPosition.Earliest);
 		setSubscriptionType(SubscriptionType.Shared);
+	}
+
+	public SchemaSpec getSchema() {
+		return schema;
+	}
+
+	public void setSchema(SchemaSpec schema) {
+		this.schema = schema;
 	}
 }

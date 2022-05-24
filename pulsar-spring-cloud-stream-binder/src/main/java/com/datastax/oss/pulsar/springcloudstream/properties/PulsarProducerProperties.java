@@ -26,6 +26,7 @@ import org.apache.pulsar.client.impl.conf.ProducerConfigurationData;
  */
 public class PulsarProducerProperties extends ProducerConfigurationData {
 	private boolean useSendAsync;
+	private SchemaSpec schema = new SchemaSpec();
 	public PulsarProducerProperties() {
 		setBlockIfQueueFull(true);
 	}
@@ -36,5 +37,13 @@ public class PulsarProducerProperties extends ProducerConfigurationData {
 
 	public void setUseSendAsync(boolean useSendAsync) {
 		this.useSendAsync = useSendAsync;
+	}
+
+	public SchemaSpec getSchema() {
+		return schema;
+	}
+
+	public void setSchema(SchemaSpec schema) {
+		this.schema = schema;
 	}
 }

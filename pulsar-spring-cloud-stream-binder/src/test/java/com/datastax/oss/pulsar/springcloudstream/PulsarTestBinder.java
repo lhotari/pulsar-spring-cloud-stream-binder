@@ -32,6 +32,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.config.EnableIntegration;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.converter.SimpleMessageConverter;
 
 /**
  * An {@link AbstractTestBinder} implementation for the
@@ -55,7 +57,8 @@ public class PulsarTestBinder extends
 				pulsarBinderConfigurationProperties);
 
 		PulsarMessageChannelBinder binder = new TestPulsarMessageChannelBinder(
-				pulsarClient, pulsarBinderConfigurationProperties, provisioningProvider);
+				pulsarClient, pulsarBinderConfigurationProperties, provisioningProvider,
+				new SimpleMessageConverter());
 
 		binder.setApplicationContext(this.applicationContext);
 
@@ -90,10 +93,11 @@ public class PulsarTestBinder extends
 
 		TestPulsarMessageChannelBinder(PulsarClient pulsarClient,
 				PulsarBinderConfigurationProperties pulsarBinderConfigurationProperties,
-				PulsarTopicProvisioner provisioningProvider) {
+				PulsarTopicProvisioner provisioningProvider,
+				MessageConverter messageConverter) {
 
-			super(pulsarBinderConfigurationProperties, provisioningProvider,
-					pulsarClient, new PulsarExtendedBindingProperties());
+			super(pulsarBinderConfigurationProperties, provisioningProvider, pulsarClient,
+					new PulsarExtendedBindingProperties(), messageConverter);
 		}
 
 		/*

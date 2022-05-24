@@ -30,6 +30,7 @@ import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
@@ -55,15 +56,18 @@ public class PulsarMessageChannelBinder extends
 	private final PulsarClient pulsarClient;
 	private final PulsarExtendedBindingProperties extendedBindingProperties;
 
+	private final MessageConverter messageConverter;
+
 	public PulsarMessageChannelBinder(
 			PulsarBinderConfigurationProperties configurationProperties,
 			PulsarTopicProvisioner provisioningProvider, PulsarClient pulsarClient,
-			PulsarExtendedBindingProperties extendedBindingProperties) {
+			PulsarExtendedBindingProperties extendedBindingProperties, MessageConverter messageConverter) {
 
 		super(headersToMap(configurationProperties), provisioningProvider);
 		this.configurationProperties = configurationProperties;
 		this.pulsarClient = pulsarClient;
 		this.extendedBindingProperties = extendedBindingProperties;
+		this.messageConverter = messageConverter;
 	}
 
 	@Override
@@ -111,7 +115,7 @@ public class PulsarMessageChannelBinder extends
 			MessageChannel errorChannel) throws Exception {
 
 		return new PulsarProducerMessageHandler(pulsarClient, destination,
-				producerProperties, errorChannel);
+				producerProperties, errorChannel, messageConverter);
 	}
 
 	@Override
