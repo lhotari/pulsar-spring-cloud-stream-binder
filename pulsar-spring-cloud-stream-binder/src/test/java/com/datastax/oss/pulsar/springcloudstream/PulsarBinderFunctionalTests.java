@@ -48,6 +48,9 @@ import org.springframework.util.MimeType;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 		"spring.cloud.stream.bindings.myEventConsumer-in-0.destination="
 				+ PulsarBinderFunctionalTests.PULSAR_TOPIC,
+		// example of setting Pulsar consumer settings for consumer
+		"pulsar.spring.cloud.stream.bindings.myEventConsumer-in-0.consumer.subscriptionType=Failover",
+		"pulsar.spring.cloud.stream.bindings.myEventConsumer-in-0.consumer.subscriptionName=MySubscription",
 		"spring.cloud.stream.bindings.myEventProducer-out-0.destination="
 				+ PulsarBinderFunctionalTests.PULSAR_TOPIC,
 		// example of enabling error channel for a producer
